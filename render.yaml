@@ -8,3 +8,4 @@ services:
     envVars:
       PYTHON_VERSION: 3.9.0
       PORT: 10000
+      GROQ_API_KEY: ""

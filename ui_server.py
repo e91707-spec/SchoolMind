@@ -627,36 +627,84 @@ When you provide factual information, cite sources when available.`;
                 enhancedSystemPrompt += `\\n\\nRecent web search results:\\n${webContext}\\n\\nIncorporate this information and cite sources where relevant.`;
             }
 
-            // Try to connect to Ollama, fall back to mock responses
+            // Try different AI services in order of preference
             try {
-                // Format messages for the API
-                const messages = [
-                    { role: 'system', content: enhancedSystemPrompt },
-                    ...conversationHistory.slice(-10) // Keep last 10 messages for context
-                ];
-
-                const response = await fetch(`${OLLAMA_BASE_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: messages,
-                        stream: false,
-                        temperature: 0.7,
-                        top_p: 0.9,
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Ollama error: ${response.status}`);
+                // First try Groq API (if configured)
+                if (window.GROQ_API_KEY) {
+                    return await generateGroqResponse(userMessage, model, enhancedSystemPrompt);
                 }
+                
+                // Then try Ollama (if running locally)
+                try {
+                    const messages = [
+                        { role: 'system', content: enhancedSystemPrompt },
+                        ...conversationHistory.slice(-10)
+                    ];
 
-                const data = await response.json();
-                return data.message.content;
+                    const response = await fetch(`${OLLAMA_BASE_URL}/chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: model,
+                            messages: messages,
+                            stream: false,
+                            temperature: 0.7,
+                            top_p: 0.9,
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data.message.content;
+                    }
+                } catch (ollamaError) {
+                    console.warn('Ollama not available:', ollamaError);
+                }
+                
+                // Fall back to mock responses
+                return generateFallbackResponse(userMessage, model);
+                
             } catch (error) {
-                console.warn('Ollama not available, using fallback response:', error);
+                console.warn('AI service error, using fallback:', error);
                 return generateFallbackResponse(userMessage, model);
             }
+        }
+
+        async function generateGroqResponse(userMessage, model, systemPrompt) {
+            // Map our models to Groq models
+            const modelMapping = {
+                'nous-hermes2:10.7b': 'llama3-70b-8192',
+                'qwen2.5:14b': 'mixtral-8x7b-32768',
+                'qwen2.5:7b': 'llama3-8b-8192'
+            };
+            
+            const groqModel = modelMapping[model] || 'llama3-8b-8192';
+            
+            const messages = [
+                { role: 'system', content: systemPrompt },
+                ...conversationHistory.slice(-10)
+            ];
+
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${window.GROQ_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: groqModel,
+                    messages: messages,
+                    temperature: 0.7,
+                    max_tokens: 1000
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Groq error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
         }
 
         function generateFallbackResponse(message, model) {
@@ -854,7 +902,19 @@ async def get_ui():
     """Serve the main UI"""
     # Add cache-busting headers
     from fastapi import Response
-    response = Response(content=HTML_TEMPLATE, media_type="text/html")
+    import os
+    
+    # Inject API key if available
+    html_content = HTML_TEMPLATE
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if groq_key:
+        # Inject the API key into the HTML
+        html_content = html_content.replace(
+            "</head>", 
+            f"<script>window.GROQ_API_KEY = '{groq_key}';</script></head>"
+        )
+    
+    response = Response(content=html_content, media_type="text/html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
