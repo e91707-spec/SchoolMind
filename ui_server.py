@@ -940,6 +940,55 @@ async def status():
         "service": "SchoolMind UI"
     }
 
+@app.get("/test-groq")
+async def test_groq():
+    """Test Groq API directly"""
+    import os
+    import httpx
+    
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if not groq_key:
+        return {"error": "No GROQ_API_KEY configured"}
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {groq_key}"
+                },
+                json={
+                    "model": "llama3-8b-8192",
+                    "messages": [
+                        {"role": "user", "content": "Say hello in one word"}
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 10
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    "success": True,
+                    "response": data["choices"][0]["message"]["content"],
+                    "model_used": data["model"],
+                    "status_code": response.status_code
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}",
+                    "response_text": response.text
+                }
+                
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 3000))
