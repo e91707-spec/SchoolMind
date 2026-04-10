@@ -1,4 +1,5 @@
 # 📚 SchoolMind - AI Study Companion
+https://schoolmind.onrender.com
 
 An intelligent AI assistant designed specifically for students, featuring multiple models, web search integration, and both web and desktop interfaces.
 
