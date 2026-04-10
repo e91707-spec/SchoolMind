@@ -630,8 +630,12 @@ When you provide factual information, cite sources when available.`;
             // Try different AI services in order of preference
             try {
                 // First try Groq API (if configured)
+                console.log('Checking for Groq API key:', window.GROQ_API_KEY ? 'Found' : 'Not found');
                 if (window.GROQ_API_KEY) {
+                    console.log('Using Groq API for AI response');
                     return await generateGroqResponse(userMessage, model, enhancedSystemPrompt);
+                } else {
+                    console.log('No Groq API key found, falling back to mock responses');
                 }
                 
                 // Then try Ollama (if running locally)
@@ -924,6 +928,17 @@ async def get_ui():
 async def health():
     """Health check endpoint"""
     return {"status": "ok", "service": "SchoolMind UI"}
+
+@app.get("/status")
+async def status():
+    """Status endpoint to check API configuration"""
+    import os
+    groq_key = os.environ.get("GROQ_API_KEY")
+    return {
+        "groq_configured": bool(groq_key),
+        "groq_key_length": len(groq_key) if groq_key else 0,
+        "service": "SchoolMind UI"
+    }
 
 if __name__ == "__main__":
     import os
