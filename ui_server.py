@@ -675,14 +675,14 @@ When you provide factual information, cite sources when available.`;
         }
 
         async function generateGroqResponse(userMessage, model, systemPrompt) {
-            // Map our models to Groq models
+            // Map our models to current Groq models
             const modelMapping = {
                 'nous-hermes2:10.7b': 'llama3-70b-8192',
                 'qwen2.5:14b': 'mixtral-8x7b-32768',
-                'qwen2.5:7b': 'llama3-8b-8192'
+                'qwen2.5:7b': 'llama-3.1-8b-instant'
             };
             
-            const groqModel = modelMapping[model] || 'llama3-8b-8192';
+            const groqModel = modelMapping[model] || 'llama-3.1-8b-instant';
             
             const messages = [
                 { role: 'system', content: systemPrompt },
@@ -959,7 +959,7 @@ async def test_groq():
                     "Authorization": f"Bearer {groq_key}"
                 },
                 json={
-                    "model": "llama3-8b-8192",
+                    "model": "llama-3.1-8b-instant",
                     "messages": [
                         {"role": "user", "content": "Say hello in one word"}
                     ],
