@@ -627,31 +627,94 @@ When you provide factual information, cite sources when available.`;
                 enhancedSystemPrompt += `\\n\\nRecent web search results:\\n${webContext}\\n\\nIncorporate this information and cite sources where relevant.`;
             }
 
-            // Format messages for the API
-            const messages = [
-                { role: 'system', content: enhancedSystemPrompt },
-                ...conversationHistory.slice(-10) // Keep last 10 messages for context
-            ];
+            // Try to connect to Ollama, fall back to mock responses
+            try {
+                // Format messages for the API
+                const messages = [
+                    { role: 'system', content: enhancedSystemPrompt },
+                    ...conversationHistory.slice(-10) // Keep last 10 messages for context
+                ];
 
-            const response = await fetch(`${OLLAMA_BASE_URL}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: model,
-                    messages: messages,
-                    stream: false,
-                    temperature: 0.7,
-                    top_p: 0.9,
-                })
-            });
+                const response = await fetch(`${OLLAMA_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: messages,
+                        stream: false,
+                        temperature: 0.7,
+                        top_p: 0.9,
+                    })
+                });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Ollama error: ${errorData.error || 'Unknown error'}`);
+                if (!response.ok) {
+                    throw new Error(`Ollama error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.message.content;
+            } catch (error) {
+                console.warn('Ollama not available, using fallback response:', error);
+                return generateFallbackResponse(userMessage, model);
             }
+        }
 
-            const data = await response.json();
-            return data.message.content;
+        function generateFallbackResponse(message, model) {
+            // Generate helpful mock responses when Ollama is not available
+            const lowerMessage = message.toLowerCase();
+            
+            // Essay writing responses
+            if (lowerMessage.includes('essay') || lowerMessage.includes('write')) {
+                return `I'd be happy to help you with your essay! Here's a structured approach:
+
+**Essay Structure:**
+1. **Introduction** - Hook your reader and state your thesis
+2. **Body Paragraphs** - 3-5 paragraphs with supporting evidence
+3. **Conclusion** - Summarize and leave a lasting impression
+
+**Writing Tips:**
+- Start with a strong thesis statement
+- Use transition words between paragraphs
+- Include specific examples and evidence
+- Proofread for grammar and spelling
+
+*Note: This is a demo response. For full AI assistance, run SchoolMind locally with Ollama installed.*`;
+            }
+            
+            // Math/Science questions
+            if (lowerMessage.includes('math') || lowerMessage.includes('science') || lowerMessage.includes('calculate')) {
+                return `I can help you approach this problem systematically:
+
+**Problem-Solving Steps:**
+1. **Understand** - Read the problem carefully
+2. **Plan** - Choose the right approach
+3. **Execute** - Work through the steps
+4. **Check** - Verify your answer
+
+**Example Approach:**
+- Identify what's given
+- Determine what you need to find
+- Choose the appropriate formula/method
+- Show your work clearly
+
+*For detailed calculations and explanations, use SchoolMind locally with Ollama models.*`;
+            }
+            
+            // General study help
+            return `I'm here to help you learn! Here are some study strategies:
+
+**Effective Study Methods:**
+- **Active Recall** - Test yourself instead of re-reading
+- **Spaced Repetition** - Review material at increasing intervals
+- **Pomodoro Technique** - 25-minute focused sessions with breaks
+
+**Learning Tips:**
+- Break complex topics into smaller parts
+- Use examples to understand abstract concepts
+- Teach others what you've learned
+- Get enough sleep and exercise
+
+*This is a demo response. Install Ollama locally for full AI-powered assistance with your specific questions.*`;
         }
 
         function isFactualQuestion(text) {
