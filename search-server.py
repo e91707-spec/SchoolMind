@@ -141,10 +141,17 @@ async def get_models():
 
 if __name__ == "__main__":
     import uvicorn
-    print("""
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    
+    if port == 8000:
+        print("""
     ╔════════════════════════════════════════════╗
     ║   SchoolMind Web Search Server             ║
     ║   Starting on http://localhost:8000        ║
     ╚════════════════════════════════════════════╝
     """)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    else:
+        print(f"Starting SchoolMind Search Server on port {port}")
+    
+    uvicorn.run(app, host="0.0.0.0", port=port)
