@@ -648,14 +648,14 @@ Be helpful, clear, and educational. Encourage critical thinking and proper resea
         async function generateGroqResponse(userMessage, model, systemPrompt) {
             console.log('Generating Groq response for:', userMessage.substring(0, 50) + '...');
             
-            // Map our models to best Groq models for writing and facts
+            // Map our models to current supported Groq models
             const modelMapping = {
-                'nous-hermes2:10.7b': 'llama3-70b-8192',        // Best for writing and essays
-                'qwen2.5:14b': 'llama3-70b-8192',               // Best for complex questions and facts
-                'qwen2.5:7b': 'llama-3.1-8b-instant'           // Fast for quick answers
+                'nous-hermes2:10.7b': 'mixtral-8x7b-32768',      // Best for writing and essays
+                'qwen2.5:14b': 'mixtral-8x7b-32768',             // Best for complex questions and facts
+                'qwen2.5:7b': 'llama-3.1-8b-instant'             // Fast for quick answers
             };
             
-            const groqModel = modelMapping[model] || 'llama3-70b-8192'; // Default to best model
+            const groqModel = modelMapping[model] || 'mixtral-8x7b-32768'; // Default to best model
             console.log('Using Groq model:', groqModel);
             
             const messages = [
@@ -881,7 +881,7 @@ async def test_groq():
                     "Authorization": f"Bearer {groq_key}"
                 },
                 json={
-                    "model": "llama-3.1-8b-instant",
+                    "model": "mixtral-8x7b-32768",
                     "messages": [
                         {"role": "user", "content": "Say hello in one word"}
                     ],
