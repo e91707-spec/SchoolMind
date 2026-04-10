@@ -1,5 +1,4 @@
 services:
-  # Web UI Service
   - type: web
     name: schoolmind-ui
     env: python
@@ -9,14 +8,3 @@ services:
     envVars:
       PYTHON_VERSION: 3.9.0
       PORT: 10000
-    
-  # Search Server Service
-  - type: web
-    name: schoolmind-search
-    env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python search-server.py
-    envVars:
-      PYTHON_VERSION: 3.9.0
-      PORT: 10001
