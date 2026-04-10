@@ -600,14 +600,20 @@ HTML_TEMPLATE = """
         async function generateResponse(userMessage, model) {
             // Build context from conversation history
             const systemPrompt = `You are SchoolMind, an AI tutor specializing in helping students with:
-- Writing essays, stories, and creative content
-- Answering homework questions
-- Explaining complex topics clearly
-- Providing study tips and learning strategies
-- Discussing academic subjects in depth
+- Writing well-structured essays with factual accuracy
+- Research-based homework answers with citations
+- Explaining complex topics with real examples
+- Providing evidence-based study strategies
+- Academic writing with proper sources
 
-Be helpful, clear, and educational. Encourage learning rather than just giving answers.
-When you provide factual information, cite sources when available.`;
+IMPORTANT: Always prioritize factual accuracy. When providing information:
+- Use verified facts and data
+- Cite sources when available
+- Distinguish between facts and opinions
+- Acknowledge when information is uncertain
+- Use web search results to enhance accuracy
+
+Be helpful, clear, and educational. Encourage critical thinking and proper research skills.`;
 
             // Check if we should search the web for this question
             const shouldSearch = isFactualQuestion(userMessage);
@@ -675,14 +681,14 @@ When you provide factual information, cite sources when available.`;
         }
 
         async function generateGroqResponse(userMessage, model, systemPrompt) {
-            // Map our models to current Groq models
+            // Map our models to best Groq models for writing and facts
             const modelMapping = {
-                'nous-hermes2:10.7b': 'llama3-70b-8192',
-                'qwen2.5:14b': 'mixtral-8x7b-32768',
-                'qwen2.5:7b': 'llama-3.1-8b-instant'
+                'nous-hermes2:10.7b': 'llama3-70b-8192',        // Best for writing and essays
+                'qwen2.5:14b': 'llama3-70b-8192',               // Best for complex questions and facts
+                'qwen2.5:7b': 'llama-3.1-8b-instant'           // Fast for quick answers
             };
             
-            const groqModel = modelMapping[model] || 'llama-3.1-8b-instant';
+            const groqModel = modelMapping[model] || 'llama3-70b-8192'; // Default to best model
             
             const messages = [
                 { role: 'system', content: systemPrompt },
