@@ -637,9 +637,17 @@ Be helpful, clear, and educational. Encourage critical thinking and proper resea
             try {
                 // First try Groq API (if configured)
                 console.log('Checking for Groq API key:', window.GROQ_API_KEY ? 'Found' : 'Not found');
+                console.log('API key length:', window.GROQ_API_KEY ? window.GROQ_API_KEY.length : 0);
                 if (window.GROQ_API_KEY) {
                     console.log('Using Groq API for AI response');
-                    return await generateGroqResponse(userMessage, model, enhancedSystemPrompt);
+                    try {
+                        const response = await generateGroqResponse(userMessage, model, enhancedSystemPrompt);
+                        console.log('Groq API response received successfully');
+                        return response;
+                    } catch (groqError) {
+                        console.error('Groq API call failed:', groqError);
+                        console.log('Falling back to mock responses due to API error');
+                    }
                 } else {
                     console.log('No Groq API key found, falling back to mock responses');
                 }
@@ -681,6 +689,8 @@ Be helpful, clear, and educational. Encourage critical thinking and proper resea
         }
 
         async function generateGroqResponse(userMessage, model, systemPrompt) {
+            console.log('Generating Groq response for:', userMessage.substring(0, 50) + '...');
+            
             // Map our models to best Groq models for writing and facts
             const modelMapping = {
                 'nous-hermes2:10.7b': 'llama3-70b-8192',        // Best for writing and essays
@@ -689,12 +699,14 @@ Be helpful, clear, and educational. Encourage critical thinking and proper resea
             };
             
             const groqModel = modelMapping[model] || 'llama3-70b-8192'; // Default to best model
+            console.log('Using Groq model:', groqModel);
             
             const messages = [
                 { role: 'system', content: systemPrompt },
                 ...conversationHistory.slice(-10)
             ];
 
+            console.log('Making Groq API call...');
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -709,11 +721,15 @@ Be helpful, clear, and educational. Encourage critical thinking and proper resea
                 })
             });
 
+            console.log('Groq API response status:', response.status);
             if (!response.ok) {
-                throw new Error(`Groq error: ${response.status}`);
+                const errorText = await response.text();
+                console.error('Groq API error response:', errorText);
+                throw new Error(`Groq error: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
+            console.log('Groq API response received, content length:', data.choices[0].message.content.length);
             return data.choices[0].message.content;
         }
 
